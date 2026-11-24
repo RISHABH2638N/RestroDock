@@ -1,4 +1,3 @@
-
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import './setup.mjs';
@@ -34,18 +33,4 @@ if (isVercel) {
   if (result.error || result.status !== 0) {
     process.exit(result.status ?? 1);
   }
-}
-
-// Shared contracts are required by the frontend.
-const contractsResult = spawnSync(
-  process.execPath,
-  [npm, 'run', 'build', '-w', '@restrodock/contracts'],
-  {
-    cwd: fileURLToPath(new URL('../', import.meta.url)),
-    stdio: 'inherit'
-  }
-);
-
-if (contractsResult.error || contractsResult.status !== 0) {
-  process.exit(contractsResult.status ?? 1);
 }
