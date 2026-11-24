@@ -1,0 +1,26 @@
+.review-workspace{display:grid;gap:18px}
+.review-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;min-width:0}
+.review-intake,.review-section-heading,.review-order-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.review-panel h2{font-size:17px;color:var(--nav)}
+.review-panel p{color:var(--muted);margin-top:6px}
+.review-workspace .button{min-height:44px}
+.review-notice{background:#eaf4eb;color:var(--success);padding:12px;border-radius:7px;max-width:none}
+.review-list,.review-items,.review-signals{list-style:none;margin:0;padding:0}
+.review-list>li{border-top:1px solid var(--line);margin-top:18px;padding-top:18px;overflow-wrap:anywhere}
+.review-order-heading h3{font-size:14px}
+.review-order-heading strong{font-variant-numeric:tabular-nums}
+.review-order-heading strong span{font-size:12px;font-weight:400;color:var(--muted)}
+.review-signals{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.review-signals li{background:#fff4de;color:#77531b;border-radius:5px;padding:4px 8px;font-size:12px}
+.review-items{margin:12px 0}
+.review-items li{padding:6px 0}
+.review-items p{margin:0}
+.review-details summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:600;color:var(--nav)}
+.review-details summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.review-decisions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:12px 0}
+.review-decisions form{display:grid;align-content:space-between;justify-items:start;gap:12px}
+.review-decisions label{display:grid;gap:6px;width:100%}
+.review-decisions .review-checkbox{display:flex;align-items:center;gap:8px;min-height:44px}
+.review-checkbox input{width:18px;height:18px;flex-shrink:0;accent-color:var(--accent)}
+.review-decisions select{width:100%;max-width:290px;min-height:44px;border:1px solid var(--muted);border-radius:7px;color:var(--ink);background:var(--surface);font:inherit;padding:6px 10px}
+@media(max-width:640px){.review-panel{padding:18px}.review-intake,.review-order-heading{align-items:flex-start;flex-direction:column}.review-decisions{grid-template-columns:1fr}}

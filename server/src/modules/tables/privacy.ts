@@ -1,0 +1,6 @@
+import {createCipheriv,createDecipheriv,randomBytes} from 'node:crypto';
+import type {Config} from '../../config.js';
+import {HttpError} from '../auth/session.js';
+export function privacyKey(config:Config){if(!/^[a-f0-9]{64}$/i.test(config.GUEST_PII_KEY))throw new HttpError(503,'GUEST_PRIVACY_UNCONFIGURED','Guest entry is unavailable until the server privacy key is configured.');return Buffer.from(config.GUEST_PII_KEY,'hex');}
+export function encryptMobile(mobile:string,key:Buffer,scope:string){const nonce=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key,nonce);cipher.setAAD(Buffer.from(scope));const bytes=Buffer.concat([cipher.update(mobile,'utf8'),cipher.final()]);return ['gcm1',nonce.toString('hex'),cipher.getAuthTag().toString('hex'),bytes.toString('hex')].join(':');}
+export function decryptMobile(encoded:string,key:Buffer,scope:string){const [version,nonce,tag,bytes]=encoded.split(':');if(version!=='gcm1'||!nonce||!tag||!bytes)throw Error('Invalid guest contact encoding');const decipher=createDecipheriv('aes-256-gcm',key,Buffer.from(nonce,'hex'));decipher.setAAD(Buffer.from(scope));decipher.setAuthTag(Buffer.from(tag,'hex'));return Buffer.concat([decipher.update(Buffer.from(bytes,'hex')),decipher.final()]).toString('utf8');}

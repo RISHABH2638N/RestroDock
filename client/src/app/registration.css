@@ -1,0 +1,52 @@
+.registration-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:10%;padding:60px 0 80px;align-items:start}
+.registration-intro h1{font-size:44px;font-weight:500;line-height:1.13;letter-spacing:-.035em;color:var(--nav);max-width:13ch}
+.registration-intro>p{font-size:16px;line-height:1.8;color:var(--muted);margin-top:24px}
+.registration-intro ol{padding-left:20px;display:grid;gap:16px;margin:28px 0;line-height:1.8;color:var(--nav)}
+.registration-intro .landing-text-link{margin-top:22px}
+.registration-form,.registration-decision{min-width:0}
+.registration-form fieldset,.registration-decision fieldset{display:grid;gap:18px;padding:0;margin:0;border:0;min-width:0}
+.registration-form legend,.registration-decision legend{font-size:23px;font-weight:500;color:var(--nav);padding:0 0 24px;line-height:1.4}
+.registration-form h2{font-size:23px;font-weight:500;color:var(--nav);border-top:1px solid var(--line);margin-top:10px;padding-top:28px}
+.registration-form label,.registration-decision label,.registration-filter label,.registration-link{display:grid;gap:8px;font-size:14px;font-weight:600;min-width:0}
+.registration-form input,.registration-decision input,.registration-decision select,.registration-decision textarea,.registration-filter select,.registration-link input{min-height:46px;min-width:0;width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid #8d9890;border-radius:7px;padding:11px 12px;caret-color:var(--accent)}
+.registration-form [aria-invalid=true],.registration-decision [aria-invalid=true]{border-color:#94391e}
+.registration-form input:focus-visible,.registration-decision input:focus-visible,.registration-decision select:focus-visible,.registration-decision textarea:focus-visible,.registration-filter select:focus-visible,.registration-link input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.registration-form fieldset:disabled,.registration-decision fieldset:disabled{opacity:.7}
+.registration-form .button,.registration-decision .button,.registration-actions .button,.registration-tracking .button{min-height:46px;font-size:14px}
+.registration-checkbox{display:flex!important;align-items:flex-start;gap:12px!important;min-height:44px;font-weight:400!important;line-height:1.7}
+.registration-checkbox input{width:20px;height:20px;min-height:20px;flex-shrink:0;accent-color:var(--nav);margin-top:2px}
+.registration-help{font-size:12px!important;font-weight:400;color:var(--muted);line-height:1.8}
+.registration-help a,.registration-inline-link{text-decoration:underline;text-underline-offset:4px;color:var(--accent)}
+.registration-form>p{margin-top:22px}
+.registration-receipt,.registration-tracking{max-width:760px;padding:52px 0 72px;margin:auto;min-height:70vh}
+.registration-receipt>svg{color:var(--accent);margin-bottom:22px}
+.registration-receipt h1,.registration-tracking h1{font-weight:500;color:var(--nav);line-height:1.2}
+.registration-receipt>p,.registration-tracking>p{margin-top:22px;line-height:1.8;color:var(--muted)}
+.registration-link{margin-top:28px}
+.registration-link input{font-size:12px;font-weight:400;overflow-wrap:anywhere}
+.registration-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.registration-restaurant-name{font-size:24px;color:var(--nav)!important}
+.registration-status{display:inline-flex;align-items:center;font-size:12px;padding:6px 10px;border-radius:5px;background:#f0f1ed;color:#5b6259;margin:20px 0}
+.registration-status.pending{background:#fff4de;color:#77531b}.registration-status.approved{background:#eaf4eb;color:#256044}.registration-status.rejected{background:#faebe6;color:#94391e}
+.registration-tracking h2{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:500;color:var(--nav)}
+.registration-tracking>.button{margin-top:26px}
+.registration-reason{padding:20px 0;border-block:1px solid var(--line);margin:24px 0;overflow-wrap:anywhere}
+.registration-reason p{white-space:pre-wrap;line-height:1.8;margin-top:14px}
+.registration-review{display:grid;grid-template-columns:minmax(250px,1fr) minmax(300px,1.2fr);gap:40px;align-items:start}
+.registration-filter{display:flex;align-items:end;gap:14px;margin-bottom:25px;flex-wrap:wrap}
+.registration-filter label{flex:1}
+.registration-filter .button{min-height:46px}
+.registration-request-list{list-style:none;padding:0;margin:0}
+.registration-request-list li{border-top:1px solid var(--line)}
+.registration-request-list button{display:grid;gap:7px;width:100%;text-align:left;padding:20px 12px;border:0;background:transparent;color:var(--ink);font:inherit;overflow-wrap:anywhere}
+.registration-request-list button:hover{background:#f0f3ef}.registration-request-list button[aria-pressed=true]{background:#eaf0ec}
+.registration-request-list strong{font-size:16px}.registration-request-list span{font-size:13px;color:var(--muted)}.registration-request-list small{font-size:11px;color:var(--muted)}
+.registration-review-detail{border-left:1px solid var(--line);padding-left:32px;min-width:0}
+.registration-review-detail>h2{font-size:25px;font-weight:500;color:var(--nav);overflow-wrap:anywhere}
+.registration-facts{display:grid;gap:16px;margin:0 0 28px}
+.registration-facts div{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;font-size:13px;line-height:1.7}
+.registration-facts dt{color:var(--muted)}.registration-facts dd{margin:0;overflow-wrap:anywhere}
+.registration-decision{border-top:1px solid var(--line);padding-top:26px}
+.registration-result{padding:18px;background:#eaf4eb;color:#256044;border-radius:7px;line-height:1.8;margin-bottom:24px}
+@media(max-width:1100px){.registration-review{grid-template-columns:1fr;gap:30px}.registration-review-detail{border-left:0;border-top:1px solid var(--line);padding:28px 0 0}}
+@media(max-width:760px){.registration-layout{grid-template-columns:1fr;gap:36px;padding:36px 0 56px}.registration-intro h1{font-size:36px;max-width:18ch}.registration-intro>p{font-size:15px}.registration-form input,.registration-decision input,.registration-decision select,.registration-decision textarea,.registration-filter select{font-size:16px}.registration-receipt,.registration-tracking{padding:34px 0 52px}.registration-review-detail>h2{font-size:23px}.registration-facts div{grid-template-columns:84px minmax(0,1fr)}.registration-actions{flex-direction:column;align-items:stretch}}

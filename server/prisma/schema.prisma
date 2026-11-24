@@ -1,0 +1,519 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+enum TenantStatus {
+  DRAFT
+  TRIAL
+  ACTIVE
+  SUSPENDED
+}
+enum Role {
+  RESTAURANT_ADMIN
+  MANAGER
+  CHEF
+  WORKER
+  CASHIER
+}
+enum DiningState {
+  OPEN
+  BILL_REQUESTED
+  CLOSED
+}
+enum OrderStatus {
+  PLACED
+  AWAITING_REVIEW
+  ACCEPTED
+  PREPARING
+  READY
+  SERVED
+  REJECTED
+  CANCELLED
+}
+enum OrderRiskSignal {
+  LARGE_QUANTITY
+  HIGH_VALUE
+  TABLE_BURST
+  BRANCH_BURST
+  REPEATED_CART
+}
+enum OrderReviewReason {
+  AUTO_DISPATCHED
+  VERIFIED_AT_TABLE
+  DUPLICATE
+  UNVERIFIED
+  OTHER_RISK
+}
+enum HandoffStatus {
+  NOT_HANDED_OFF
+  HANDED_TO_POS
+  SETTLEMENT_PENDING
+  EXTERNALLY_SETTLED
+  DISPUTED
+}
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+enum BillingMode {
+  EXTERNAL_POS
+  RESTRODOCK
+}
+
+model Tenant {
+  id String @id @default(uuid()) @db.Uuid
+  slug String @unique @db.VarChar(80)
+  name String @db.VarChar(160)
+  status TenantStatus @default(DRAFT)
+  billingMode BillingMode @default(EXTERNAL_POS)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  version Int @default(1)
+  invitations StaffInvitation[]
+  controlAudit ControlAudit[]
+  branches Branch[]
+  memberships Membership[]
+  subscription Subscription?
+  registrationRequests RegistrationRequest[]
+}
+model Subscription {
+  tenantId String @id @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  planCode String @db.VarChar(40)
+  status SubscriptionStatus @default(TRIAL)
+  endsAt DateTime? @db.Timestamptz(3)
+}
+model Branch {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  name String @db.VarChar(160)
+  timezone String @default("Asia/Kolkata") @db.VarChar(80)
+  active Boolean @default(false)
+  orderingPaused Boolean @default(true)
+  billingMode String @default("EXTERNAL_POS_MANUAL") @db.VarChar(40)
+  kitchenSource String @default("RESTRODOCK") @db.VarChar(40)
+  setupVersion Int @default(1)
+  menuRevision Int @default(1)
+  tableRevision Int @default(1)
+  tableEntryPublished Boolean @default(false)
+  settings BranchSettings?
+  checkoutIntake CheckoutIntake?
+  logo BranchLogo?
+  menuImports MenuImport[]
+  access BranchAccess[]
+  categories MenuCategory[]
+  items MenuItem[]
+  tables RestaurantTable[]
+  audit AuditEvent[]
+  invitations StaffInvitation[]
+  registrationRequests RegistrationRequest[]
+  @@unique([tenantId,id])
+}
+model CheckoutIntake {
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  paused Boolean @default(false)
+  version Int @default(1)
+  @@id([tenantId,branchId])
+}
+model User {
+  resetTokenHash String? @unique @db.Char(64)
+  resetExpiresAt DateTime? @db.Timestamptz(3)
+  resetRequestedAt DateTime? @db.Timestamptz(3)
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique @db.VarChar(254)
+  passwordHash String? @db.VarChar(255)
+  active Boolean @default(false)
+  memberships Membership[]
+  platformAdmin PlatformAdmin?
+  sessions StaffSession[]
+  invitationsSent StaffInvitation[] @relation("InvitationCreator")
+  controlAudit ControlAudit[]
+  registrationsReviewed RegistrationRequest[] @relation("RegistrationReviewer")
+  registrationsApproved RegistrationRequest[] @relation("RegistrationApplicant")
+}
+model Membership {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  userId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  role Role
+  active Boolean @default(false)
+  access BranchAccess[]
+  @@unique([tenantId,id])
+  @@unique([tenantId,userId])
+  @@index([userId])
+}
+model BranchAccess {
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  membershipId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  membership Membership @relation(fields:[tenantId,membershipId],references:[tenantId,id],onDelete:Restrict)
+  @@id([tenantId,branchId,membershipId])
+  @@index([tenantId,membershipId])
+}
+model MenuCategory {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  name String @db.VarChar(100)
+  sortOrder Int @default(0)
+  archived Boolean @default(false)
+  items MenuItem[]
+  @@unique([tenantId,branchId,id])
+  @@unique([tenantId,branchId,name])
+}
+model MenuItem {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  categoryId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  category MenuCategory @relation(fields:[tenantId,branchId,categoryId],references:[tenantId,branchId,id],onDelete:Restrict)
+  name String @db.VarChar(160)
+  priceMinor Int
+  currency String @default("INR") @db.Char(3)
+  available Boolean @default(false)
+  description String @default("") @db.VarChar(1000)
+  foodType String @default("UNSPECIFIED") @db.VarChar(20)
+  state String @default("DRAFT") @db.VarChar(20)
+  source String @default("MANUAL") @db.VarChar(20)
+  reviewRequired Boolean @default(false)
+  reviewedAt DateTime? @db.Timestamptz(3)
+  sortOrder Int @default(0)
+  variants MenuVariant[]
+  addons MenuAddon[]
+  photo MenuPhoto?
+  lines OrderItem[]
+  @@unique([tenantId,branchId,id])
+  @@index([tenantId,branchId,available])
+  @@index([tenantId,branchId,categoryId])
+}
+model RestaurantTable {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  label String @db.VarChar(80)
+  seats Int
+  section String @default("Main") @db.VarChar(80)
+  archived Boolean @default(false)
+  version Int @default(1)
+  qrCodes QrCode[]
+  sessions DiningSession[]
+  @@unique([tenantId,branchId,id])
+  @@unique([tenantId,branchId,label])
+}
+model QrCode {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  tableId String @db.Uuid
+  table RestaurantTable @relation(fields:[tenantId,branchId,tableId],references:[tenantId,branchId,id],onDelete:Restrict)
+  secretHash String @unique @db.Char(64)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  @@index([tenantId,branchId,tableId])
+}
+model DiningSession {
+  waiterConfirmation Boolean @default(false)
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  tableId String @db.Uuid
+  table RestaurantTable @relation(fields:[tenantId,branchId,tableId],references:[tenantId,branchId,id],onDelete:Restrict)
+  state DiningState @default(OPEN)
+  version Int @default(1)
+  pinVersion Int @default(1)
+  entryOnly Boolean @default(false)
+  singleGuest Boolean @default(false)
+  checkoutPilot Boolean @default(false)
+  pinHash String? @db.VarChar(255)
+  pinExpiresAt DateTime? @db.Timestamptz(3)
+  failedJoinAttempts Int @default(0)
+  lockedUntil DateTime? @db.Timestamptz(3)
+  openedAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  closedAt DateTime? @db.Timestamptz(3)
+  assistanceRequestedAt DateTime? @db.Timestamptz(3)
+  billRequestedAt DateTime? @db.Timestamptz(3)
+  guests GuestSession[]
+  orders Order[]
+  handoffs BillingHandoff[]
+  @@unique([tenantId,branchId,id])
+  @@index([tenantId,branchId,tableId,openedAt])
+  // One active session per table is enforced by a partial unique migration index.
+}
+model GuestSession {
+  requiresWaiterConfirmation Boolean @default(false)
+  waiterConfirmedAt DateTime? @db.Timestamptz(3)
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  diningSessionId String @db.Uuid
+  diningSession DiningSession @relation(fields:[tenantId,branchId,diningSessionId],references:[tenantId,branchId,id],onDelete:Restrict)
+  tokenHash String @unique @db.Char(64)
+  displayName String @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  // AES-256-GCM with server key; cleared on session revocation/lazy expiration.
+  mobileCiphertext String?
+  expiresAt DateTime @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  orders Order[]
+  @@unique([tenantId,branchId,diningSessionId,id])
+}
+model Order {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  diningSessionId String @db.Uuid
+  guestSessionId String @db.Uuid
+  diningSession DiningSession @relation(fields:[tenantId,branchId,diningSessionId],references:[tenantId,branchId,id],onDelete:Restrict)
+  guestSession GuestSession @relation(fields:[tenantId,branchId,diningSessionId,guestSessionId],references:[tenantId,branchId,diningSessionId,id],onDelete:Restrict)
+  idempotencyKey String @db.VarChar(128)
+  requestHash String @db.Char(64)
+  status OrderStatus @default(AWAITING_REVIEW)
+  estimatedTotalMinor Int
+  riskSignals OrderRiskSignal[] @default([])
+  reviewReason OrderReviewReason?
+  reviewedAt DateTime? @db.Timestamptz(3)
+  kitchenNote String? @db.VarChar(240)
+  kitchenUpdatedAt DateTime? @db.Timestamptz(3)
+  version Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  items OrderItem[]
+  @@unique([tenantId,branchId,id])
+  @@unique([tenantId,guestSessionId,idempotencyKey])
+  @@index([tenantId,branchId,status,createdAt])
+  @@index([tenantId,branchId,createdAt])
+  @@index([tenantId,branchId,diningSessionId,createdAt])
+}
+model OrderItem {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  orderId String @db.Uuid
+  menuItemId String @db.Uuid
+  order Order @relation(fields:[tenantId,branchId,orderId],references:[tenantId,branchId,id],onDelete:Restrict)
+  menuItem MenuItem @relation(fields:[tenantId,branchId,menuItemId],references:[tenantId,branchId,id],onDelete:Restrict)
+  nameSnapshot String @db.VarChar(160)
+  portionNameSnapshot String? @db.VarChar(80)
+  portionPriceMinor Int?
+  addOnSnapshots Json @default("[]")
+  preparationNote String @default("") @db.VarChar(200)
+  unitPriceMinor Int
+  quantity Int
+  @@index([tenantId,branchId,orderId])
+  @@index([tenantId,branchId,menuItemId])
+}
+model BillingHandoff {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  diningSessionId String @db.Uuid
+  diningSession DiningSession @relation(fields:[tenantId,branchId,diningSessionId],references:[tenantId,branchId,id],onDelete:Restrict)
+  revision Int
+  status HandoffStatus @default(NOT_HANDED_OFF)
+  // Immutable packet payload/versioning, staff actor links and reconciliation added Day 17.
+  summarySnapshot Json
+  externalBillReference String? @db.VarChar(160)
+  staffConfirmedAt DateTime? @db.Timestamptz(3)
+  paymentMethod String? @db.VarChar(8)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([tenantId,branchId,diningSessionId,revision])
+}
+model AuditEvent {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  actorReference String @db.VarChar(100)
+  action String @db.VarChar(100)
+  resourceReference String @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  // No arbitrary request body, PIN, phone, token, password or database URL metadata.
+  @@index([tenantId,branchId,createdAt])
+}
+
+model PlatformAdmin {
+  userId String @id @db.Uuid
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  active Boolean @default(true)
+}
+model AuthBootstrap {
+  id Int @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+model StaffSession {
+  rememberDevice Boolean @default(false)
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  tokenHash String @unique @db.Char(64)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  lastSeenAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  @@index([userId,expiresAt])
+}
+model AuthThrottle {
+  key String @id @db.Char(64)
+  failures Int @default(0)
+  windowStart DateTime @default(now()) @db.Timestamptz(3)
+}
+model StaffInvitation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  email String @db.VarChar(254)
+  role Role
+  tokenHash String @unique @db.Char(64)
+  createdById String @db.Uuid
+  createdBy User @relation("InvitationCreator",fields:[createdById],references:[id],onDelete:Restrict)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  acceptedAt DateTime? @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  @@index([tenantId,email,expiresAt])
+}
+model ControlAudit {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @db.Uuid
+  actor User @relation(fields:[actorId],references:[id],onDelete:Restrict)
+  tenantId String? @db.Uuid
+  tenant Tenant? @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  action String @db.VarChar(80)
+  resourceReference String @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([tenantId,createdAt])
+}
+
+model BranchSettings {
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  displayName String? @db.VarChar(160)
+  address String? @db.VarChar(300)
+  contactEmail String? @db.VarChar(254)
+  contactPhone String? @db.VarChar(16)
+  businessHours Json?
+  lastSeatingMinutes Int?
+  maxItemQuantity Int @default(10)
+  maxOrderQuantity Int @default(30)
+  maxOrderValueMinor Int @default(500000)
+  approvalQuantity Int?
+  approvalValueMinor Int?
+  pinExpiryMinutes Int @default(15)
+  safetyConfigured Boolean @default(false)
+  posConfigured Boolean @default(false)
+  posName String? @db.VarChar(100)
+  posInstructions String? @db.VarChar(500)
+  assistanceEnabled Boolean @default(false)
+  menuPhotosEnabled Boolean @default(true)
+  submittedAt DateTime? @db.Timestamptz(3)
+  @@id([tenantId,branchId])
+}
+model BranchLogo {
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Cascade)
+  bytes Bytes
+  width Int
+  height Int
+  sha256 String @db.Char(64)
+  @@id([tenantId,branchId])
+}
+model MenuPhoto {
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  menuItemId String @db.Uuid
+  item MenuItem @relation(fields:[tenantId,branchId,menuItemId],references:[tenantId,branchId,id],onDelete:Cascade)
+  bytes Bytes
+  width Int
+  height Int
+  sha256 String @db.Char(64)
+  @@id([tenantId,branchId,menuItemId])
+}
+model MenuVariant {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  menuItemId String @db.Uuid
+  item MenuItem @relation(fields:[tenantId,branchId,menuItemId],references:[tenantId,branchId,id],onDelete:Cascade)
+  name String @db.VarChar(80)
+  priceMinor Int
+  available Boolean @default(true)
+  sortOrder Int @default(0)
+  @@unique([tenantId,branchId,menuItemId,name])
+}
+model MenuAddon {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  menuItemId String @db.Uuid
+  item MenuItem @relation(fields:[tenantId,branchId,menuItemId],references:[tenantId,branchId,id],onDelete:Cascade)
+  name String @db.VarChar(80)
+  priceMinor Int
+  available Boolean @default(true)
+  sortOrder Int @default(0)
+  @@unique([tenantId,branchId,menuItemId,name])
+}
+model MenuImport {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  branchId String @db.Uuid
+  branch Branch @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  requestKey String @db.Uuid
+  payloadHash String @db.Char(64)
+  itemCount Int
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([tenantId,branchId,requestKey])
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+model RegistrationRequest {
+  id String @id @default(uuid()) @db.Uuid
+  restaurantName String @db.VarChar(160)
+  branchName String @db.VarChar(160)
+  ownerName String @db.VarChar(100)
+  email String @db.VarChar(254)
+  phone String @db.VarChar(16)
+  city String @db.VarChar(100)
+  address String @db.VarChar(300)
+  passwordHash String? @db.VarChar(255)
+  trackingHash String @unique @db.Char(64)
+  payloadHash String @db.Char(64)
+  status RegistrationStatus @default(PENDING)
+  version Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  reviewedAt DateTime? @db.Timestamptz(3)
+  reviewedById String? @db.Uuid
+  reviewedBy User? @relation("RegistrationReviewer",fields:[reviewedById],references:[id],onDelete:Restrict)
+  ownershipConfirmed Boolean @default(false)
+  reason String? @db.VarChar(500)
+  tenantId String? @db.Uuid
+  tenant Tenant? @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  branchId String? @db.Uuid
+  branch Branch? @relation(fields:[tenantId,branchId],references:[tenantId,id],onDelete:Restrict)
+  applicantUserId String? @unique @db.Uuid
+  applicant User? @relation("RegistrationApplicant",fields:[applicantUserId],references:[id],onDelete:Restrict)
+  @@index([status,createdAt,id])
+  @@index([status,expiresAt])
+  @@index([email])
+}

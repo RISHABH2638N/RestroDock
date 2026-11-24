@@ -1,0 +1,47 @@
+
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.test.example
+!**/.env.*.example
+.env*.local
+
+# Build output and caches
+**/.next/
+**/dist/
+server/src/generated/
+coverage/
+*.tsbuildinfo
+.vercel/
+
+# Logs and temporary files
+*.log
+qa-results/
+.DS_Store
+
+# Exclude documentation and development-only files
+docs/
+.impeccable/
+.editorconfig
+AGENTS.md
+DESIGN.md
+PRODUCT.md
+
+# Exclude optional GitHub workflows
+.github/
+
+# Secrets, certificates and database backups
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.npmrc
+*.dump
+*.dump.partial
+*.sql.gz
+backups/

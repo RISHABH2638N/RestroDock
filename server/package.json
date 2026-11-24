@@ -1,0 +1,47 @@
+{
+  "name": "server",
+  "version": "0.16.4",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --import tsx --watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:deploy": "node --import tsx scripts/database-cli.ts deploy",
+    "db:seed": "node --import tsx scripts/database-cli.ts seed",
+    "db:status": "node --import tsx scripts/database-cli.ts status",
+    "db:doctor": "node --import tsx scripts/database-cli.ts doctor",
+    "predev": "node ../scripts/prepare-development.mjs",
+    "auth:bootstrap": "node --import tsx scripts/bootstrap.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "@restrodock/contracts": "0.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "pino": "^10.1.0",
+    "qrcode": "1.5.4",
+    "sharp": "0.35.5",
+    "socket.io": "^4.8.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.14",
+    "@electric-sql/pglite-socket": "^0.2.17",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/qrcode": "1.5.6",
+    "@types/supertest": "^6.0.3",
+    "jsqr": "1.4.0",
+    "prisma": "^7.0.0",
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.1.4"
+  }
+}

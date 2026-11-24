@@ -1,0 +1,58 @@
+.pa-workspace { display:grid; gap:16px; }
+.pa-workspace > header { margin-bottom:4px; }
+.pa-workspace p { color:var(--muted); }
+.pa-period,.pa-filters label { display:grid; gap:4px; color:var(--nav); font-weight:600; }
+.pa-period select,.pa-filters input,.pa-filters select {
+  width:100%; min-width:0; min-height:44px; padding:8px 10px;
+  border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--ink); font:inherit;
+}
+.pa-sectionHead { display:flex; gap:12px; justify-content:space-between; align-items:start; flex-wrap:wrap; }
+.pa-metrics,.pa-onboarding { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:18px 0; }
+.pa-metrics div,.pa-onboarding div { border-top:1px solid var(--line); padding-top:10px; }
+.pa-metrics dt,.pa-onboarding dt { color:var(--muted); }
+.pa-metrics dd,.pa-onboarding dd,.pa-activityTotals strong {
+  margin:3px 0 0; color:var(--nav); font-size:clamp(1.3rem,2.4vw,2rem); font-weight:700; font-variant-numeric:tabular-nums;
+}
+.pa-statusLinks { display:flex; gap:8px; flex-wrap:wrap; }
+.pa-statusLinks button,.pa-queue button,.pa-queue a,.pa-pagination button { min-height:44px; }
+.pa-columns { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:16px; align-items:start; }
+.pa-activityTotals { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; margin:12px 0 16px; }
+.pa-activityTotals span,.pa-axis,.pa-workspace small { color:var(--muted); }
+.pa-chart { display:flex; align-items:stretch; height:128px; gap:2px; padding-inline:3px; border-bottom:1px solid var(--line); background:var(--canvas); }
+.pa-barSlot { min-inline-size:0; flex:1; display:flex; align-items:end; }
+.pa-bar { width:100%; background:var(--success); border-radius:3px 3px 0 0; }
+.pa-axis { display:flex; justify-content:space-between; gap:8px; font-size:.8rem; padding-top:6px; }
+.pa-history { margin-top:14px; }
+.pa-history summary { padding-block:10px; cursor:pointer; color:var(--nav); font-weight:600; }
+.pa-queue,.pa-branchList { margin:10px 0 0; padding:0; list-style:none; }
+.pa-queue li + li,.pa-branchList li + li { border-top:1px solid var(--line); }
+.pa-queue :is(a,button),.pa-restaurantButton { background:none; border:0; color:var(--nav); font:inherit; text-align:left; cursor:pointer; }
+.pa-queue :is(a,button) { width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:9px; align-items:center; padding:9px 4px; }
+.pa-queue :is(a,button):hover,.pa-restaurantButton:hover { background:var(--canvas); }
+.pa-queue small,.pa-comparison small,.pa-branchList small { display:block; font-weight:400; }
+.pa-onboarding { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.pa-filters { display:grid; grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr)) auto; align-items:end; gap:10px; margin:16px 0 12px; }
+.pa-filters button { min-height:44px; }
+.pa-filterNotice,.pa-pagination { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-block:10px; }
+.pa-pagination span { margin-right:auto; color:var(--muted); }
+.pa-comparison { min-width:690px; }
+.pa-comparison td { color:var(--ink); }
+.pa-comparison th[scope=row] { font-size:inherit; }
+.pa-restaurantButton { display:flex; align-items:flex-start; gap:8px; padding:5px; width:100%; min-height:44px; font-weight:600; }
+.pa-restaurantButton svg { margin-top:2px; flex:none; }
+.pa-restaurantButton[aria-expanded=true] svg { transform:rotate(180deg); }
+.pa-comparison td.pa-expanded { background:var(--canvas); white-space:normal; }
+.pa-branchDetails h3 { margin:0; }
+.pa-branchList li { display:grid; grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr)); gap:8px; padding:8px 0; }
+.pa-message { padding:12px 0; }
+.pa-message button { margin-top:8px; }
+@media(max-width:870px) {
+ .pa-columns { grid-template-columns:minmax(0,1fr); }
+ .pa-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:520px) {
+ .pa-metrics,.pa-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .pa-filters label:first-child { grid-column:1/-1; }
+ .pa-period { width:100%; }
+ .pa-period select,.pa-filters input,.pa-filters select { font-size:16px; }
+}

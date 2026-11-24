@@ -1,0 +1,55 @@
+import {test,afterEach,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {createElement} from 'react';
+const dom=new JSDOM('<!doctype html><html><body></body></html>',{url:'http://localhost:3000'});
+for(const [key,value] of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,HTMLInputElement:dom.window.HTMLInputElement,Node:dom.window.Node,getComputedStyle:dom.window.getComputedStyle,IS_REACT_ACT_ENVIRONMENT:true}))Object.defineProperty(globalThis,key,{value,writable:true,configurable:true});
+const {render,screen,cleanup,within}=await import('@testing-library/react');
+const userEvent=(await import('@testing-library/user-event')).default;
+const {GuestPreview}=await import('../src/features/ux-preview/guest');
+const {KitchenPreview}=await import('../src/features/ux-preview/kitchen');
+const {CashierPreview}=await import('../src/features/ux-preview/cashier');
+const {PlatformPreview,RestaurantPreview}=await import('../src/features/ux-preview/admin');
+const {ComponentGallery}=await import('../src/features/ux-preview/gallery');
+afterEach(()=>cleanup());after(()=>dom.window.close());
+test('guest can browse, build a cart, correct PIN error and inspect sample tracking without API calls',async()=>{
+ const user=userEvent.setup();let network=0;const original=globalThis.fetch;globalThis.fetch=()=>{network++;throw new Error('No preview may call the API');};
+ try{render(createElement(GuestPreview));const cart=screen.getByRole('button',{name:'View sample cart'});assert.ok((cart as HTMLButtonElement).disabled);
+ await user.click(screen.getByRole('button',{name:'Add Paneer tikka'}));await user.click(cart);assert.ok(screen.getByRole('heading',{name:'Your sample cart'}));assert.equal(document.activeElement,screen.getByRole('heading',{name:'Your sample cart'}));
+ await user.click(screen.getByRole('button',{name:'Continue to table verification'}));await user.click(screen.getByRole('button',{name:'Continue preview'}));assert.match(screen.getByRole('alert').textContent??'',/246810/);assert.equal(document.activeElement,screen.getByLabelText('Sample table PIN'));
+ await user.type(screen.getByLabelText('Sample table PIN'),'246810');await user.click(screen.getByRole('button',{name:'Continue preview'}));assert.ok(screen.getByRole('heading',{name:'Review before ordering'}));
+ await user.click(screen.getByRole('button',{name:'Preview order status'}));assert.match(screen.getByText(/No order has been submitted/).textContent??'',/not live/);
+ await user.selectOptions(screen.getByLabelText('Inspect sample status'),'Served');assert.ok(screen.getByText('Served · sample'));assert.ok(screen.getByText('Served describes fulfilment, not payment.'));
+ await user.click(screen.getByRole('button',{name:'Start a new preview'}));assert.ok((screen.getByRole('button',{name:'View sample cart'}) as HTMLButtonElement).disabled);assert.equal(network,0);
+ }finally{globalThis.fetch=original;}
+});
+test('sold-out items cannot be added; category changes filter sample items',async()=>{const user=userEvent.setup();render(createElement(GuestPreview));assert.equal(screen.queryByRole('button',{name:'Add Boondi raita'}),null);await user.click(screen.getByRole('button',{name:'Breads'}));assert.ok(screen.getByRole('heading',{name:'Butter naan'}));assert.equal(screen.queryByRole('heading',{name:'Paneer tikka'}),null);});
+test('kitchen chef-ready-worker path is interactive while held tickets stay locked',async()=>{
+ const user=userEvent.setup();render(createElement(KitchenPreview));const ticket=screen.getByRole('article',{name:'Sample ticket SAMPLE-01'});const held=screen.getByRole('article',{name:'Sample ticket SAMPLE-03'});
+ assert.equal(within(held).queryByRole('button'),null);
+ await user.click(within(ticket).getByRole('button',{name:'Preview acceptance'}));await user.click(within(ticket).getByRole('button',{name:'Preview preparation'}));await user.click(within(ticket).getByRole('button',{name:'Preview ready'}));assert.equal(within(ticket).queryByRole('button',{name:'Preview served'}),null);
+ await user.selectOptions(screen.getByLabelText('Preview role'),'WORKER');await user.click(within(ticket).getByRole('button',{name:'Preview served'}));assert.ok(within(ticket).getByText('Served'));assert.equal(within(held).queryByRole('button'),null);
+});
+test('kitchen rejection requires a reason and updates the local ticket',async()=>{const user=userEvent.setup();render(createElement(KitchenPreview));const ticket=screen.getByRole('article',{name:'Sample ticket SAMPLE-01'});await user.click(within(ticket).getByRole('button',{name:'Preview rejection'}));await user.click(screen.getByRole('button',{name:'Apply sample rejection'}));assert.match(screen.getByRole('alert').textContent??'',/reason/);await user.type(screen.getByLabelText('Sample rejection reason'),'Sample item unavailable');await user.click(screen.getByRole('button',{name:'Apply sample rejection'}));assert.ok(within(ticket).getByText('Rejected'));});
+test('cashier confirmation requires POS reference and acknowledgement; it never reports payment success',async()=>{
+ const user=userEvent.setup();render(createElement(CashierPreview));assert.ok(screen.getByText('Not handed off'));await user.click(screen.getByRole('button',{name:'Preview POS handoff'}));assert.ok(screen.getByText('Settlement pending'));
+ await user.click(screen.getByRole('button',{name:'Preview staff confirmation'}));assert.match(screen.getByRole('alert').textContent??'',/reference/);
+ await user.type(screen.getByLabelText('Sample external bill reference'),'POS-SAMPLE-001');await user.click(screen.getByRole('button',{name:'Preview staff confirmation'}));assert.match(screen.getByRole('alert').textContent??'',/Acknowledge/);
+ await user.click(screen.getByRole('checkbox'));await user.click(screen.getByRole('button',{name:'Preview staff confirmation'}));assert.ok(screen.getByRole('heading',{name:'Settlement preview only'}));assert.equal(document.activeElement,screen.getByRole('heading',{name:'Settlement preview only'}));assert.ok(screen.getByText(/no payment was verified/));assert.equal(screen.queryByText(/payment successful/i),null);
+ await user.click(screen.getByRole('button',{name:'Reset handoff preview'}));assert.ok(screen.getByText('Not handed off'));
+});
+test('platform checklist is local inspection and never activation',async()=>{const user=userEvent.setup();render(createElement(PlatformPreview));await user.click(screen.getByRole('button',{name:'Inspect Salimar Darbar'}));assert.equal(screen.getAllByRole('checkbox').length,6);await user.click(screen.getByLabelText(/Verify restaurant details/));assert.ok((screen.getByLabelText(/Verify restaurant details/) as HTMLInputElement).checked);assert.ok(screen.getByText(/Preview checks never authorize activation/));});
+test('restaurant exposes a non-scannable QR layout and keeps operational actions disabled',async()=>{const user=userEvent.setup();render(createElement(RestaurantPreview));await user.click(screen.getByRole('button',{name:'Tables & QR'}));assert.ok((screen.getByRole('button',{name:'Activate table · Day 10'}) as HTMLButtonElement).disabled);assert.ok(screen.getByText('Layout placeholder only. No scannable code or active token.'));await user.selectOptions(screen.getByLabelText('Inspect a sample table'),'Table 06');assert.ok(screen.getByText('Table 06 · sample card'));await user.click(screen.getByRole('button',{name:'Analytics'}));assert.ok(screen.getByRole('heading',{name:'Analytics needs real operational data'}));});
+test('UI gallery supports loading, error retry, offline retry, empty and locked states',async()=>{const user=userEvent.setup();render(createElement(ComponentGallery));const select=screen.getByLabelText('Inspect a component state');await user.selectOptions(select,'loading');assert.ok(screen.getByRole('status',{name:'Loading preview'}));await user.selectOptions(select,'error');assert.ok(screen.getByRole('alert'));await user.click(screen.getByRole('button',{name:'Retry preview'}));assert.ok(screen.getByText('Normal content stays readable without animation.'));await user.selectOptions(select,'offline');await user.click(screen.getByRole('button',{name:'Preview reconnection'}));await user.selectOptions(select,'empty');assert.ok(screen.getByRole('heading',{name:'No menu items yet'}));await user.selectOptions(select,'locked');assert.ok((screen.getByRole('button',{name:'Sign-in planned for Day 5'}) as HTMLButtonElement).disabled);});
+
+test('guest name/mobile errors identify and focus only the invalid field',async()=>{
+ const user=userEvent.setup();render(createElement(GuestPreview));await user.click(screen.getByRole('button',{name:'Add Paneer tikka'}));await user.click(screen.getByRole('button',{name:'View sample cart'}));await user.click(screen.getByRole('button',{name:'Continue to table verification'}));
+ const pin=screen.getByLabelText('Sample table PIN'),name=screen.getByLabelText('Sample name'),mobile=screen.getByLabelText('Sample mobile');
+ await user.type(pin,'246810');await user.clear(name);await user.click(screen.getByRole('button',{name:'Continue preview'}));assert.equal(document.activeElement,name);assert.equal(name.getAttribute('aria-invalid'),'true');assert.equal(pin.getAttribute('aria-invalid'),'false');assert.equal(name.getAttribute('aria-describedby'),'sample-join-error');
+ await user.type(name,'Guest');await user.clear(mobile);await user.type(mobile,'123');await user.click(screen.getByRole('button',{name:'Continue preview'}));assert.equal(document.activeElement,mobile);assert.equal(mobile.getAttribute('aria-invalid'),'true');assert.equal(name.getAttribute('aria-invalid'),'false');assert.match(mobile.getAttribute('aria-describedby')??'',/sample-join-error/);
+});
+test('cashier amount and acknowledgement errors identify and focus their own controls',async()=>{
+ const user=userEvent.setup();render(createElement(CashierPreview));await user.click(screen.getByRole('button',{name:'Preview POS handoff'}));assert.equal(document.activeElement,screen.getByRole('heading',{name:'Capture a sample POS reference'}));
+ const reference=screen.getByLabelText('Sample external bill reference'),amount=screen.getByLabelText('Sample final POS amount (INR)'),ack=screen.getByRole('checkbox');await user.type(reference,'SAMPLE');await user.clear(amount);await user.type(amount,'bad');await user.click(screen.getByRole('button',{name:'Preview staff confirmation'}));assert.equal(document.activeElement,amount);assert.equal(amount.getAttribute('aria-invalid'),'true');assert.equal(reference.getAttribute('aria-invalid'),'false');
+ await user.clear(amount);await user.type(amount,'570');await user.click(screen.getByRole('button',{name:'Preview staff confirmation'}));assert.equal(document.activeElement,ack);assert.equal(ack.getAttribute('aria-invalid'),'true');assert.equal(amount.getAttribute('aria-invalid'),'false');assert.equal(ack.getAttribute('aria-describedby'),'cashier-error');
+});
