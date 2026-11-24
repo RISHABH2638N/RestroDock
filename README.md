@@ -363,5 +363,6 @@ Select a plan, status, or attention item to filter the restaurant table. Expand 
 In the checkout pilot, open the assigned Chef queue or Waiter workspace. Select a Hindi voice supplied by the device and tap **Enable sound**. The test phrase lets staff confirm the voice and volume. Available voices, including female voices, depend on the browser and device. Select a female Hindi voice if installed. Menu item names are spoken as entered in the menu.
 
 The Chef hears orders entering the kitchen queue, including orders just approved by a manager. The Waiter hears orders marked ready and new guest assistance requests for the selected outlet. Guest assistance must be enabled in the branch settings. Sound starts off when you open or reload a workspace or switch outlets. Alerts are live only, so staff can use the boards to catch up after a disconnect.
-#   R e s t r o D o c k  
+#   R e s t r o D o c k 
+ 
  
