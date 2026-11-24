@@ -45,3 +45,4 @@ PRODUCT.md
 *.dump.partial
 *.sql.gz
 backups/
+eslint.config.mjs
